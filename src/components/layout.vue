@@ -1,13 +1,14 @@
 <template>
   <div class="layout">
     <h1>layout</h1>
-    <router-view name="shop"></router-view>
+    <!-- <router-view name="shop"></router-view> -->
     <router-view name="chat"></router-view>
   </div>
 </template>
 
 <script>
-import { mapGetters, mapActions } from 'vuex'
+import { mapGetters, mapMutations, mapActions } from 'vuex'
+import push from '../store/push'
 
 export default {
   name: 'layout',
@@ -16,41 +17,18 @@ export default {
       
     }
   },
-  computed: mapGetters([
-    'user'
-  ]),
+  computed: {
+    ...mapGetters([
+      'user'
+    ])
+  },
+  methods: {
+    ...mapMutations([
+
+    ])
+  },
   created: function(){
-    var nopt = {
-      syncTeams: !1,
-      syncFriends: !1,
-      syncRoamingMsgs: !1,
-      syncTeamMembers: !1,
-      syncFilter: !0,
-      onconnect: function(res){
-        applyKefu();
-      }
-    };
-    window.nim = new NIM(Object.assign(nopt, this.user));
-    function applyKefu(){
-      nim.sendCustomSysMsg({
-        to: -1,
-        cc: !0,
-        filter: !0,
-        scene: 'p2p',
-        content: JSON.stringify({
-          cmd: 1,
-          deviceid: '122222222222',
-          exchange: -1,
-          fromType: 'WEB',
-        }),
-        //
-        done: function (error, data) {
-          if (!error) {
-            console.log(data)
-          }
-        }
-      });
-    }
+    push.initSocket();
   }
 }
 </script>

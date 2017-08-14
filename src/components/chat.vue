@@ -1,16 +1,28 @@
 <template>
   <div class="chat">
     <h2>chat</h2>
+    <p class="state">{{state}}</p>
+    <ul class="msglist">
+      <li v-for="msg in msgList">{{msg.content}}</li>
+    </ul>
   </div>
 </template>
 
 <script>
+import { mapGetters, mapMutations, mapActions } from 'vuex'
+
 export default {
   name: 'chat',
   data () {
     return {
       
     }
+  },
+  computed: {
+    ...mapGetters([
+      'state',
+      'msgList'
+    ])
   },
   created: function(){
     
@@ -36,5 +48,9 @@ li {
 
 a {
   color: #42b983;
+}
+
+.chat{
+
 }
 </style>
