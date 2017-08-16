@@ -23,9 +23,7 @@ function initSocket(){
 }
 
 function onConnect(data){
-	let user = store.getters.user;
-	store.commit('setStatus', 'connected');
-	applyKefu();
+	store.commit('onConnect');
 }
 
 function onMsg(msg){
@@ -87,45 +85,8 @@ var onCustomSysMsg = (function(){
 	}
 })();
 
-function applyKefu(){
-	store.commit('setStatus', 'applying');
-	sendCustomSysMsg({
-		content: JSON.stringify({
-			cmd: 1,
-			deviceid: 'return'
-		})
-	});
-}
-
-function sendCustomSysMsg(msg){
-	let socket = store.getters.socket,
-		user = store.getters.user;
-	socket.sendCustomSysMsg(Object.assign({
-		to: user.exchange[0],
-		cc: true,
-		filter: true,
-		scene: 'p2p',
-		done: function(err, msg){
-			if(!!err) console.error('sendCustomSysMsg error', err);
-		}
-	}, msg))
-}
-
-function sendMessage(msg){
-	let status = store.getters.status;
-	if(status != 'success') return;
-	let socket = store.getters.socket;
-	socket.sendText(Object.assign({
-		cc: true,
-		filter: true,
-		scene: 'p2p',
-		to: -1
-	}, msg));
-}
-
 export default {
-	initSocket: initSocket,
-	sendMessage: sendMessage
+	initSocket: initSocket
 }
 
 

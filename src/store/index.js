@@ -1,6 +1,5 @@
 import Vue from 'vue'
 import Vuex from 'vuex'
-import push from './push'
 
 Vue.use(Vuex)
 
@@ -45,10 +44,17 @@ const mutations = {
   setStatus: function(state, status){
     state.status = status;
   },
+  onConnect: function(state){
+    state.status = 'connected';
+    this.commit('applyKefu');
+  },
+  applyKefu: function(state){
+    state.status = 'applying';
+    applyKefu(state);
+  },
   addSession: function(state, session){
     session.msgs = [];
     //state.sessions[session.id] = session;
-    //
     Vue.set(state.sessions, session.id, session);
     state.currentSessionId = session.id;
   },
@@ -65,8 +71,8 @@ const mutations = {
 }
 
 const actions = {
-  sendMessage: async function({commit}, msg){
-    let ret = await sendMessage(msg);
+  sendMessage: async function({commit, state}, msg){
+    let ret = await sendMessage(state, msg);
     commit('addMsg', ret);
   }
 }
@@ -83,6 +89,70 @@ const getters = {
   }
 }
 
+/**
+ * 申请客服
+ * @param  {object} state
+ * @return {void}
+ */
+function applyKefu(state){
+  sendCustomSysMsg(state, {
+    content: JSON.stringify({
+      cmd: 1,
+      deviceid: 'return'
+    })
+  });
+}
+/**
+ * 发送普通消息
+ * @param  {object} state
+ * @param  {object} msg
+ * @return {void}
+ */
+const sendMessage = function(state, msg){
+  return new Promise((resolve, reject) => {
+    msg.done = (err, ret) => {
+      if(err){
+        reject(err)
+      }else{
+        msg.id = state.currentSessionId + '#' + ret.idClient;
+        resolve(msg);
+      }
+    }
+    let status = state.status;
+    if(status != 'success') return;
+    let socket = state.socket;
+    socket.sendText(Object.assign({
+      cc: true,
+      filter: true,
+      scene: 'p2p',
+      to: -1
+    }, msg));
+  })
+}
+/**
+ * 发送自定义系统消息
+ * @param  {object} state 
+ * @param  {object} msg
+ * @return {void}
+ */
+function sendCustomSysMsg(state, msg){
+  let socket = state.socket,
+    user = state.user;
+  socket.sendCustomSysMsg(Object.assign({
+    to: user.exchange[0],
+    cc: true,
+    filter: true,
+    scene: 'p2p',
+    done: function(err, msg){
+      if(!!err) console.error('sendCustomSysMsg error', err);
+    }
+  }, msg))
+}
+/**
+ * 消息格式化
+ * @param  {Object} msg
+ * @return {void}
+ */
 const doFormatMsg = (function(){
   let fmap = {
     'text': function(msg){
@@ -96,20 +166,6 @@ const doFormatMsg = (function(){
     }
   } 
 })();
-
-const sendMessage = function(msg){
-  return new Promise((resolve, reject) => {
-    msg.done = (err, ret) => {
-      if(err){
-        reject(err)
-      }else{
-        msg.id = state.currentSessionId + '#' + ret.idClient;
-        resolve(msg);
-      }
-    }
-    push.sendMessage(msg);
-  })
-}
 
 export default new Vuex.Store({
   state,
